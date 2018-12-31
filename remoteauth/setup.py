@@ -13,7 +13,7 @@ setup(
     license='BSD License',
     description='Package provides API to make http requests to a rest endpoint',
     long_description=README,
-    url='https://gitlab.com/gabano2005/django-remoteauth.git',
+    url='gitlab.com',
     author='Nana Duah',
     install_requires=[
         'django>=2.1,<3',
