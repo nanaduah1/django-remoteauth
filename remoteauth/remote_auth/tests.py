@@ -1,4 +1,4 @@
-import api
+from . import api
 from django.test import TestCase
 from requests_mock import mock
 from django.conf import settings
