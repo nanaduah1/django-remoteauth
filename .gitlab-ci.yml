@@ -10,5 +10,5 @@ Run Tests:
     - virtualenv env
     - source env/bin/activate
     - cd remoteauth
-    - pip install -r requirements.txt
+    - pip install -r ../requirements.txt
     - python manage.py test remote_auth
