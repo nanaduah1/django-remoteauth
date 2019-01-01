@@ -8,7 +8,7 @@ from threading import get_ident
 from django.contrib.auth.backends import ModelBackend
 
 
-logger = logging.getLogger("api_calls")
+logger = logging.getLogger(__name__)
 
 API_CLIENT_ID = getattr(settings, 'FOOD_JOINT_API_CLIENTID', '')
 API_CLIENT_SECRET = getattr(settings, 'FOOD_JOINT_API_CLIENT_SECRET', '')
@@ -17,7 +17,6 @@ AUTH=HTTPBasicAuth(API_CLIENT_ID, API_CLIENT_SECRET)
 USER_ACCESS_TOKEN_KEY="user_token"
 SITE_ACCESS_TOKEN_KEY="site_token"
 ISO_DATE_FORMAT = "'%Y-%m-%dT%H:%M:%S'"
-
 
 _requests={}
 class GlobalRequestMiddleware(object):
@@ -124,7 +123,7 @@ class RemoteBackend(ModelBackend):
         logger.critical("GET PROFILE FAILED: {0}".format(response.json()))
 
     def authenticate(self, request, username=None, password=None):
-        logger.critical("AUTHENTICATING as {un}:{pwd}".format(un=username,pwd=password))
+        logger.critical("AUTHENTICATING as {un}:{pwd}".format(un=username,pwd="*****"))
         token =ApiAccessToken().get_access_token(username=username,password=password,session={})
         user = None
         if token:
@@ -175,7 +174,6 @@ def fetch(path, max_retry=3):
     token = ApiAccessToken().get_access_token(session=get_request_session())
     if token:
         headers = __get_auth_header__(token.get('access_token',None))
- 
         response = requests.get(url,headers=headers, auth=None)
         if response.ok:
             return response.json()
@@ -215,13 +213,13 @@ def post(path:str,data:dict, files=None, max_retry=3):
         logger.fatal("Unable to obtain access token for post request to {0}".format(url))
         return ApiResults(error_code=4000,error_message="Unable to obtain access token")
 
-def put(path:str,data:dict, max_retry=3):
+def put(path:str,data:dict, files=None, max_retry=3):
     url = __full_url__(path)
     token = ApiAccessToken().get_access_token(session=get_request_session())
     logger.critical("RESPONSE OK {}".format(token))
     if token:
         headers = __get_auth_header__(token.get('access_token',None))
-        response = requests.put(url,json=data,headers=headers, auth=None)
+        response = requests.put(url,json=data,headers=headers, files=files, auth=None)
        
         if response.ok:
             logger.critical("RESPONSE OK {}".format(response.json()))
@@ -230,7 +228,7 @@ def put(path:str,data:dict, max_retry=3):
             #in case http 401 we should refresh access token
             if max_retry and response.status_code==401:
                 ApiAccessToken().get_access_token(session=get_request_session())
-                return put(path,data=data, max_retry=max_retry-1)
+                return put(path,data=data, files=files, max_retry=max_retry-1)
             else:
                 logger.error("api.put:= Unable to put data at {url}. Received http {statuscode}: {reason}. Data={data}".format(url=url,
                                                                                                             statuscode=response.status_code,
@@ -242,6 +240,25 @@ def put(path:str,data:dict, max_retry=3):
     else:
         logger.fatal("Unable to obtain access token for put request to {0}".format(url))
         return ApiResults(error_code=4000,error_message="Unable to obtain access token")
+        
+
+def delete(path, max_retry=3):
+    url = __full_url__(path)
+    token = ApiAccessToken().get_access_token(session=get_request_session())
+    if token:
+        headers = __get_auth_header__(token.get('access_token',None))
+        response = requests.delete(url,headers=headers, auth=None)
+        if response.ok:
+            return ApiResults(ok=response.ok)
+        else:
+            #in case http 401 we should refresh access token
+            if max_retry and response.status_code==401:
+                ApiAccessToken().get_access_token(session=get_request_session())
+                return delete(path, max_retry=max_retry-1)
+            else:
+                logger.error("api.delete:= Unable to delete data at {url}. Received http {statuscode}: {reason}".format(url=url,
+                                                                                                            statuscode=response.status_code,
+                                                                                                            reason=response.reason))
 
 
 def __full_url__(relative_url):
