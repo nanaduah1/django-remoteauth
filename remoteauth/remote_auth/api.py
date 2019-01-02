@@ -114,6 +114,7 @@ class RemoteBackend(ModelBackend):
     """
     Custom authentication through a remote API
     """
+    
     def get_profile(self, token):
         url = __full_url__("/users/profile/")
         headers = __get_auth_header__(token.get('access_token',None))
@@ -142,7 +143,7 @@ class RemoteBackend(ModelBackend):
                     request_data=_requests.get(get_ident(),{})
                     request_data.update({
                         "access_token": token,
-                        "user_profile":user_info
+                        "user_profile": user_info
                     })
                     _requests[get_ident()]=request_data
 
@@ -160,6 +161,13 @@ class RemoteBackend(ModelBackend):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
+    
+    def has_perm(self, user_obj, perm, obj=None):
+        """
+        Check the user's profile to see if they have the given permission
+        """
+        request = get_request()
+        return request and user_obj.is_authenticated and perm in request.session["user_profile"]['roles']
 
 class ApiResults:
     def __init__(self,ok=False,data={},error_code=0,error_message=""):
