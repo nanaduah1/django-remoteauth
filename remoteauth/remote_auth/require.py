@@ -1,15 +1,13 @@
 from . import api
-def require_role(role:str):
+def in_any_of_the_roles(roles:[]):
     request = api.get_request()
 
     def user_test(user):
         user_profile = request.session.get('user_profile')
         if user_profile and user_profile.get('roles', None):
-            role = role.lower()
-            for r in user_profile.get('roles'):
-                if role == r.lower():
-                    return True
-        elif not role:
+            roles_set = set([r.lower() for r in roles])
+            return not roles_set.isdisjoint([r.lower() for r in user_profile.get('roles')])
+        elif not roles:
             return True
         
         return False
