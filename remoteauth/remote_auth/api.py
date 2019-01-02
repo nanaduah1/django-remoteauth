@@ -167,7 +167,7 @@ class RemoteBackend(ModelBackend):
         Check the user's profile to see if they have the given permission
         """
         request = get_request()
-        return request and user_obj.is_authenticated and perm in request.session["user_profile"]['roles']
+        return request and user_obj.is_authenticated and perm in request.session.get("user_profile",{}).get('roles',None)
 
 class ApiResults:
     def __init__(self,ok=False,data={},error_code=0,error_message=""):
