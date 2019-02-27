@@ -2,6 +2,7 @@ import requests
 import logging
 import datetime
 from requests.auth import HTTPBasicAuth
+from requests.exceptions import ConnectionError, Timeout
 from django.conf import settings
 from django.contrib.auth.models import User
 from threading import get_ident
@@ -10,6 +11,7 @@ from django.contrib.auth.backends import ModelBackend
 
 logger = logging.getLogger(__name__)
 
+NETWORK_ERROR_CODE = -1
 API_CLIENT_ID = getattr(settings, 'FOOD_JOINT_API_CLIENTID', '')
 API_CLIENT_SECRET = getattr(settings, 'FOOD_JOINT_API_CLIENT_SECRET', '')
 BASE_URL = getattr(settings,'FOOD_JOINT_API_ENDPOINT','')
@@ -73,14 +75,18 @@ class ApiAccessToken:
         if token is None or self.__is_expired(token):
             url = __full_url__('/oauth/token/')
             data = {'grant_type':'client_credentials'}
-            response = requests.post(url=url, data=data, auth=AUTH)
-            if response.ok:
-                token = response.json()
-                token.update({"timestamp":datetime.datetime.now().strftime(ISO_DATE_FORMAT)})
-                session[SITE_ACCESS_TOKEN_KEY] = token
-            else:
-                self.__log_http_failure(url=url,response=response,context="ApiAccessToken.__get_site_access_token")
-
+            try:
+                response = requests.post(url=url, data=data, auth=AUTH)
+                if response.ok:
+                    token = response.json()
+                    token.update({"timestamp":datetime.datetime.now().strftime(ISO_DATE_FORMAT)})
+                    session[SITE_ACCESS_TOKEN_KEY] = token
+                else:
+                    self.__log_http_failure(url=url,response=response,context="ApiAccessToken.__get_site_access_token")
+            except ConnectionError:
+                logger.exception("Unable to connect to API token endpoint")
+            except Timeout:
+                logger.exception("Connecting to API token endpoint has timed out")
         return token
 
     def __is_expired(self, token:dict):
@@ -182,18 +188,25 @@ def fetch(path, max_retry=3):
     token = ApiAccessToken().get_access_token(session=get_request_session())
     if token:
         headers = __get_auth_header__(token.get('access_token',None))
-        response = requests.get(url,headers=headers, auth=None)
-        if response.ok:
-            return response.json()
-        else:
-            #in case http 401 we should refresh access token
-            if max_retry and response.status_code==401:
-                ApiAccessToken().get_access_token(session=get_request_session())
-                return fetch(path, max_retry=max_retry-1)
+        try:
+            response = requests.get(url,headers=headers, auth=None)
+            if response.ok:
+                return ApiResults(ok=response.ok,data=response.json())
             else:
-                logger.error("api.fetch:= Unable to fetch data at {url}. Received http {statuscode}: {reason}".format(url=url,
-                                                                                                            statuscode=response.status_code,
-                                                                                                            reason=response.reason))
+                #in case http 401 we should refresh access token
+                if max_retry and response.status_code==401:
+                    ApiAccessToken().get_access_token(session=get_request_session())
+                    return fetch(path, max_retry=max_retry-1)
+                else:
+                    logger.error("api.fetch:= Unable to fetch data at {url}. Received http {statuscode}: {reason}".format(url=url,
+                                                                                                                statuscode=response.status_code,
+                                                                                                                reason=response.reason))
+        except ConnectionError:
+            logger.exception("Unable to connect to get to API endpoint {}".format(url))
+            return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
+        except Timeout:
+            logger.exception("Connecting to API endpoint {} has timed out".format(url))
+            return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
 
               
 def post(path:str,data:dict, files=None, max_retry=3):
@@ -201,22 +214,30 @@ def post(path:str,data:dict, files=None, max_retry=3):
     token = ApiAccessToken().get_access_token(session=get_request_session())
     if token:
         headers = __get_auth_header__(token.get('access_token',None))
-        response = requests.post(url,json=data,headers=headers, auth=None, files=files)
-        if response.ok:
-            return ApiResults(ok=response.ok,data=response.json())
-        else:
-            #in case http 401 we should refresh access token
-            if max_retry and response.status_code==401:
-                ApiAccessToken.get_access_token(session=get_request_session())
-                return post(path,data=data, files=files, max_retry=max_retry-1)
+        try:
+            response = requests.post(url,json=data,headers=headers, auth=None, files=files)
+            if response.ok:
+                return ApiResults(ok=response.ok,data=response.json())
             else:
-                logger.error("api.post:= Unable to post data at {url}. Received http {statuscode}: {reason}. Data={data}".format(url=url,
-                                                                                                            statuscode=response.status_code,
-                                                                                                            reason=response.reason,
-                                                                                                            data=data))
+                #in case http 401 we should refresh access token
+                if max_retry and response.status_code==401:
+                    ApiAccessToken.get_access_token(session=get_request_session())
+                    return post(path,data=data, files=files, max_retry=max_retry-1)
+                else:
+                    logger.error("api.post:= Unable to post data at {url}. Received http {statuscode}: {reason}. Data={data}".format(url=url,
+                                                                                                                statuscode=response.status_code,
+                                                                                                                reason=response.reason,
+                                                                                                                data=data))
 
-            
-            return ApiResults(error_code=response.status_code,error_message=response.reason)
+                
+                return ApiResults(error_code=response.status_code,error_message=response.reason)
+
+        except ConnectionError:
+            logger.exception("Unable to connect to post to API endpoint {}".format(url))
+            return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
+        except Timeout:
+            logger.exception("Connecting to API endpoint {} has timed out".format(url))
+            return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
     else:
         logger.fatal("Unable to obtain access token for post request to {0}".format(url))
         return ApiResults(error_code=4000,error_message="Unable to obtain access token")
@@ -227,24 +248,31 @@ def put(path:str,data:dict, files=None, max_retry=3):
     logger.critical("RESPONSE OK {}".format(token))
     if token:
         headers = __get_auth_header__(token.get('access_token',None))
-        response = requests.put(url,json=data,headers=headers, files=files, auth=None)
-       
-        if response.ok:
-            logger.critical("RESPONSE OK {}".format(response.json()))
-            return ApiResults(ok=response.ok,data=response.json())
-        else:
-            #in case http 401 we should refresh access token
-            if max_retry and response.status_code==401:
-                ApiAccessToken().get_access_token(session=get_request_session())
-                return put(path,data=data, files=files, max_retry=max_retry-1)
+        try:
+            response = requests.put(url,json=data,headers=headers, files=files, auth=None)
+        
+            if response.ok:
+                logger.critical("RESPONSE OK {}".format(response.json()))
+                return ApiResults(ok=response.ok,data=response.json())
             else:
-                logger.error("api.put:= Unable to put data at {url}. Received http {statuscode}: {reason}. Data={data}".format(url=url,
-                                                                                                            statuscode=response.status_code,
-                                                                                                            reason=response.reason,
-                                                                                                            data=data))
+                #in case http 401 we should refresh access token
+                if max_retry and response.status_code==401:
+                    ApiAccessToken().get_access_token(session=get_request_session())
+                    return put(path,data=data, files=files, max_retry=max_retry-1)
+                else:
+                    logger.error("api.put:= Unable to put data at {url}. Received http {statuscode}: {reason}. Data={data}".format(url=url,
+                                                                                                                statuscode=response.status_code,
+                                                                                                                reason=response.reason,
+                                                                                                                data=data))
 
-            
-            return ApiResults(error_code=response.status_code,error_message=response.reason)
+                
+                return ApiResults(error_code=response.status_code,error_message=response.reason)
+        except ConnectionError:
+            logger.exception("Unable to put to API endpoint {}".format(url))
+            return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
+        except Timeout:
+            logger.exception("Connecting to API endpoint {} has timed out".format(url))
+            return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
     else:
         logger.fatal("Unable to obtain access token for put request to {0}".format(url))
         return ApiResults(error_code=4000,error_message="Unable to obtain access token")
@@ -255,19 +283,26 @@ def delete(path, max_retry=3):
     token = ApiAccessToken().get_access_token(session=get_request_session())
     if token:
         headers = __get_auth_header__(token.get('access_token',None))
-        response = requests.delete(url,headers=headers, auth=None)
-        if response.ok:
-            return ApiResults(ok=response.ok)
-        else:
-            #in case http 401 we should refresh access token
-            if max_retry and response.status_code==401:
-                ApiAccessToken().get_access_token(session=get_request_session())
-                return delete(path, max_retry=max_retry-1)
+        try:
+            response = requests.delete(url,headers=headers, auth=None)
+            if response.ok:
+                return ApiResults(ok=response.ok)
             else:
-                logger.error("api.delete:= Unable to delete data at {url}. Received http {statuscode}: {reason}".format(url=url,
-                                                                                                            statuscode=response.status_code,
-                                                                                                            reason=response.reason))
+                #in case http 401 we should refresh access token
+                if max_retry and response.status_code==401:
+                    ApiAccessToken().get_access_token(session=get_request_session())
+                    return delete(path, max_retry=max_retry-1)
+                else:
+                    logger.error("api.delete:= Unable to delete data at {url}. Received http {statuscode}: {reason}".format(url=url,
+                                                                                                                statuscode=response.status_code,
+                                                                                                                reason=response.reason))
 
+        except ConnectionError:
+            logger.exception("Unable to send delete to API endpoint {}".format(url))
+            return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
+        except Timeout:
+            logger.exception("Connecting to API endpoint {} has timed out".format(url))
+            return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
 
 def __full_url__(relative_url):
     return '{0}{1}'.format(BASE_URL,relative_url)
