@@ -207,7 +207,9 @@ def fetch(path, max_retry=3):
         except Timeout:
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
-
+    else:
+        logger.fatal("Unable to obtain access token for fetch request to {0}".format(url))
+        return ApiResults(error_code=4000,error_message="Unable to obtain access token")
               
 def post(path:str,data:dict, files=None, max_retry=3):
     url = __full_url__(path)
@@ -303,6 +305,11 @@ def delete(path, max_retry=3):
         except Timeout:
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
+
+    else:
+        logger.fatal("Unable to obtain access token for delete request to {0}".format(url))
+        return ApiResults(error_code=4000,error_message="Unable to obtain access token")
+
 
 def __full_url__(relative_url):
     return '{0}{1}'.format(BASE_URL,relative_url)
