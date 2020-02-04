@@ -183,7 +183,7 @@ class ApiResults:
         self.error_message=error_message
 
 
-def fetch(path, max_retry=3):
+def fetch(path, max_retry=3, json=True):
     url = __full_url__(path)
     token = ApiAccessToken().get_access_token(session=get_request_session())
     if token:
@@ -191,7 +191,7 @@ def fetch(path, max_retry=3):
         try:
             response = requests.get(url,headers=headers, auth=None)
             if response.ok:
-                return ApiResults(ok=response.ok,data=response.json())
+                return ApiResults(ok=response.ok,data=response.json() if json else response.text)
             else:
                 #in case http 401 we should refresh access token
                 if max_retry and response.status_code==401:
