@@ -121,4 +121,4 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
-FOOD_JOINT_API_ENDPOINT = 'http://apinginx/api'
+API_ENDPOINT = 'http://apinginx/api'
