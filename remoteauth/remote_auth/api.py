@@ -12,9 +12,11 @@ from django.contrib.auth.backends import ModelBackend
 logger = logging.getLogger(__name__)
 
 NETWORK_ERROR_CODE = -1
-API_CLIENT_ID = getattr(settings, 'FOOD_JOINT_API_CLIENTID', '')
-API_CLIENT_SECRET = getattr(settings, 'FOOD_JOINT_API_CLIENT_SECRET', '')
-BASE_URL = getattr(settings,'FOOD_JOINT_API_ENDPOINT','')
+API_CLIENT_ID = getattr(settings, 'API_CLIENT_ID', '')
+API_CLIENT_SECRET = getattr(settings, 'API_CLIENT_SECRET', '')
+BASE_URL = getattr(settings,'API_ENDPOINT','')
+ACCESS_TOKEN_ENDPOINT = getattr(settings, 'ACCESS_TOKEN_ENDPOINT', '/oauth/token/')
+USER_PROFILE_ENDPOINT = getattr(settings, 'USER_PROFILE_ENDPOINT', '/users/profile/')
 AUTH=HTTPBasicAuth(API_CLIENT_ID, API_CLIENT_SECRET)
 USER_ACCESS_TOKEN_KEY="user_token"
 SITE_ACCESS_TOKEN_KEY="site_token"
@@ -73,7 +75,7 @@ class ApiAccessToken:
     def __get_site_access_token(self, session={}):
         token = session.get(SITE_ACCESS_TOKEN_KEY,None)
         if token is None or self.__is_expired(token):
-            url = __full_url__('/oauth/token/')
+            url = __full_url__(ACCESS_TOKEN_ENDPOINT)
             data = {'grant_type':'client_credentials'}
             try:
                 response = requests.post(url=url, data=data, auth=AUTH)
@@ -98,7 +100,7 @@ class ApiAccessToken:
     def __get_access_token_for_user(self, username,password,session={}):
         token = session.get(USER_ACCESS_TOKEN_KEY,None)
         if token is None or self.__is_expired(token):
-            url = __full_url__('/oauth/token/')
+            url = __full_url__(ACCESS_TOKEN_ENDPOINT)
             data={}
             if token is not None:
                 data.update({'refresh_token': token["refresh_token"], 'grant_type':'refresh_token'})
@@ -122,7 +124,7 @@ class RemoteBackend(ModelBackend):
     """
     
     def get_profile(self, token):
-        url = __full_url__("/users/profile/")
+        url = __full_url__(USER_PROFILE_ENDPOINT)
         headers = __get_auth_header__(token.get('access_token',None))
         response = requests.get(url,headers=headers, auth=None)
         if response.ok:
