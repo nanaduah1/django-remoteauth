@@ -10,12 +10,18 @@ def url(path:str):
     return api.__full_url__(path)
 
 class ApiAccessTokenTests(TestCase):
+
+    def register_vault_url(self, api_mock):
+        mock_token={"access_token": "yiB2rhfMC5PlRpMVDhGU5I0fD5UB3H", "expires_in": 36000, "timestamp":datetime.now().strftime(api.ISO_DATE_FORMAT), "token_type": "Bearer", "scope": "read write"}
+        api_mock.register_uri("POST",url('/configs/prod//oauth'), status_code=200, json=mock_token)
+
     
     @mock()
     def test_access_token_is_fetched_when_not_in_sesstion(self, api_mock):   
 
         mock_token={"access_token": "yiB2rhfMC5PlRpMVDhGU5I0fD5UB3H", "expires_in": 36000, "timestamp":datetime.now().strftime(api.ISO_DATE_FORMAT), "token_type": "Bearer", "scope": "read write"}
         api_mock.register_uri("POST",url(api.ACCESS_TOKEN_ENDPOINT), status_code=200, json=mock_token)
+        self.register_vault_url(api_mock)
         
         session={}
         token=api.ApiAccessToken().get_access_token(session=session)
@@ -28,7 +34,7 @@ class ApiAccessTokenTests(TestCase):
         mock_token={"access_token": "yiB2rhfMC5PlRpMVDhGU5I0fD5UB3H", "expires_in": 36000, "timestamp":datetime.now().strftime(api.ISO_DATE_FORMAT), "token_type": "Bearer", "scope": "read write"}
         session={"site_token":mock_token}
         token=api.ApiAccessToken().get_access_token(session=session)
-
+        
         self.assertIsNotNone(token)
         self.assertEqual(token["access_token"],mock_token["access_token"])
     
@@ -37,7 +43,7 @@ class ApiAccessTokenTests(TestCase):
     def test_that_new_token_is_fetched_when_existing_token_expires(self, api_mock):
         mock_token={"access_token": "yiB2rhfMC5PlRpMVDhGU5I0fD5UB3H", "expires_in": 36000, "timestamp":datetime.now().strftime(api.ISO_DATE_FORMAT), "token_type": "Bearer", "scope": "read write"}
         api_mock.register_uri("POST",url(api.ACCESS_TOKEN_ENDPOINT), status_code=200, json=mock_token)
-        
+        self.register_vault_url(api_mock)
         expired_token_time = datetime.now()-timedelta(seconds=700)
         expired_token={"access_token": "adasdkaklsd7868768787", "expires_in": 600, "timestamp":expired_token_time.strftime(api.ISO_DATE_FORMAT), "token_type": "Bearer", "scope": "read write"}
         session={"site_token": expired_token}
@@ -51,7 +57,7 @@ class ApiAccessTokenTests(TestCase):
     def test_that_new_token_is_fetched_when_user_info_is_given(self, api_mock):
         mock_token={"access_token": "yiB2rhfMC5PlRpMVDhGU5I0fD5UB3H", "expires_in": 36000, "timestamp":datetime.now().strftime(api.ISO_DATE_FORMAT), "token_type": "Bearer", "scope": "read write"}
         api_mock.register_uri("POST",url(api.ACCESS_TOKEN_ENDPOINT), status_code=200, json=mock_token)
-        
+        self.register_vault_url(api_mock)
         site_token={"access_token": "adasdkaklsd7868768787", "expires_in": 600, "timestamp":datetime.now().strftime(api.ISO_DATE_FORMAT), "token_type": "Bearer", "scope": "read write"}
         session={"site_token": site_token}
         token=api.ApiAccessToken().get_access_token(session=session,username="tester",password="passwed")
@@ -67,7 +73,7 @@ class ApiAccessTokenTests(TestCase):
         
         session={"user_token": insession_token}
         token=api.ApiAccessToken().get_access_token(session=session,username="tester",password="passwed")
-
+        self.register_vault_url(api_mock)
         self.assertIsNotNone(token)
         self.assertEqual(token["access_token"],insession_token["access_token"])
         self.assertEqual(session["user_token"],token)
@@ -76,7 +82,7 @@ class ApiAccessTokenTests(TestCase):
     def test_that_new_user_token_is_fetched_when_existing_token_expires(self, api_mock):
         mock_token={"access_token": "yiB2rhfMC5PlRpMVDhGU5I0fD5UB3H", "refresh_token": "wqweq32342342w", "expires_in": 36000, "timestamp":datetime.now().strftime(api.ISO_DATE_FORMAT), "token_type": "Bearer", "scope": "read write"}
         api_mock.register_uri("POST",url(api.ACCESS_TOKEN_ENDPOINT), status_code=200, json=mock_token)
-        
+        self.register_vault_url(api_mock)
         expired_token_time = datetime.now()-timedelta(seconds=700)
         expired_token={"access_token": "adasdkaklsd7868768787", "refresh_token": "54654sdasda7yg", "expires_in": 600, "timestamp":expired_token_time.strftime(api.ISO_DATE_FORMAT), "token_type": "Bearer", "scope": "read write"}
         session={"user_token": expired_token}

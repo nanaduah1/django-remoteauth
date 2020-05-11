@@ -25,6 +25,7 @@ USER_PROFILE_ENDPOINT = getattr(settings, 'USER_PROFILE_ENDPOINT', '/users/profi
 USER_ACCESS_TOKEN_KEY="user_token"
 SITE_ACCESS_TOKEN_KEY="site_token"
 ISO_DATE_FORMAT = "'%Y-%m-%dT%H:%M:%S'"
+RELATIVE_URL_PREFIX = getattr(settings, 'RELATIVE_URL_PREFIX', '/api')
 
 _requests={}
 class GlobalRequestMiddleware(object):
@@ -320,7 +321,7 @@ def delete(path, max_retry=3):
 
 
 def __full_url__(relative_url):
-    return '{0}{1}'.format(CONFIG_PROVIDER.get('API_ENDPOINT', BASE_URL,relative_url))
+    return f"{CONFIG_PROVIDER.get('API_ENDPOINT', BASE_URL)}{RELATIVE_URL_PREFIX}{relative_url}"
 
 
 def __get_auth_header__(access_token=None,token_type='Bearer'):
