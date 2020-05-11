@@ -11,13 +11,17 @@ from django.contrib.auth.backends import ModelBackend
 
 logger = logging.getLogger(__name__)
 
+CONFIG_PROVIDER = settings.CONFIG_PROVIDER
+
+#Dynamicaly can change at runtime
+API_CLIENT_ID = CONFIG_PROVIDER.get('API_CLIENT_ID', '')
+API_CLIENT_SECRET =CONFIG_PROVIDER.get('API_CLIENT_SECRET', '')
+BASE_URL = CONFIG_PROVIDER.get('API_ENDPOINT','')
+
+#Can remain static until restart
 NETWORK_ERROR_CODE = -1
-API_CLIENT_ID = getattr(settings, 'API_CLIENT_ID', '')
-API_CLIENT_SECRET = getattr(settings, 'API_CLIENT_SECRET', '')
-BASE_URL = getattr(settings,'API_ENDPOINT','')
 ACCESS_TOKEN_ENDPOINT = getattr(settings, 'ACCESS_TOKEN_ENDPOINT', '/oauth/token/')
 USER_PROFILE_ENDPOINT = getattr(settings, 'USER_PROFILE_ENDPOINT', '/users/profile/')
-AUTH=HTTPBasicAuth(API_CLIENT_ID, API_CLIENT_SECRET)
 USER_ACCESS_TOKEN_KEY="user_token"
 SITE_ACCESS_TOKEN_KEY="site_token"
 ISO_DATE_FORMAT = "'%Y-%m-%dT%H:%M:%S'"
@@ -78,7 +82,7 @@ class ApiAccessToken:
             url = __full_url__(ACCESS_TOKEN_ENDPOINT)
             data = {'grant_type':'client_credentials'}
             try:
-                response = requests.post(url=url, data=data, auth=AUTH)
+                response = requests.post(url=url, data=data, auth=HTTPBasicAuth(CONFIG_PROVIDER.get('API_CLIENT_ID', API_CLIENT_ID) , CONFIG_PROVIDER.get('API_CLIENT_SECRET', API_CLIENT_SECRET)))
                 if response.ok:
                     token = response.json()
                     token.update({"timestamp":datetime.datetime.now().strftime(ISO_DATE_FORMAT)})
@@ -91,11 +95,13 @@ class ApiAccessToken:
                 logger.exception("Connecting to API token endpoint has timed out")
         return token
 
+
     def __is_expired(self, token:dict):
         token_grabbed_at = datetime.datetime.strptime(token["timestamp"],ISO_DATE_FORMAT)
         now=datetime.datetime.now()
         diff = now - token_grabbed_at
         return diff >= datetime.timedelta(seconds=token["expires_in"])
+
 
     def __get_access_token_for_user(self, username,password,session={}):
         token = session.get(USER_ACCESS_TOKEN_KEY,None)
@@ -107,7 +113,7 @@ class ApiAccessToken:
             else:
                 data.update({'username': username, 'password': password, 'grant_type':'password'})
     
-            response = requests.post(url=url, data=data, auth=AUTH)        
+            response = requests.post(url=url, data=data, auth=HTTPBasicAuth(CONFIG_PROVIDER.get('API_CLIENT_ID', API_CLIENT_ID) , CONFIG_PROVIDER.get('API_CLIENT_SECRET', API_CLIENT_SECRET)))        
             if response.ok:
                 token = response.json()
                 token.update({"timestamp":datetime.datetime.now().strftime(ISO_DATE_FORMAT)})
@@ -314,7 +320,7 @@ def delete(path, max_retry=3):
 
 
 def __full_url__(relative_url):
-    return '{0}{1}'.format(BASE_URL,relative_url)
+    return '{0}{1}'.format(CONFIG_PROVIDER.get('API_ENDPOINT', BASE_URL,relative_url))
 
 
 def __get_auth_header__(access_token=None,token_type='Bearer'):

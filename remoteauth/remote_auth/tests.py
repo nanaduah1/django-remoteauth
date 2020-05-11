@@ -4,7 +4,7 @@ from requests_mock import mock
 from django.conf import settings
 from datetime import datetime, timedelta
 
-BASE_URL = getattr(settings,'API_ENDPOINT','')
+BASE_URL = api.BASE_URL
 
 def url(path:str):
     return api.__full_url__(path)

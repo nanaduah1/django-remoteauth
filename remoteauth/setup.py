@@ -17,6 +17,7 @@ setup(
     author='Nana Duah',
     install_requires=[
         'django',
-        'requests'
+        'requests',
+        'vault-client @ git+https://gitlab.com/gabano2005/vault-client.git@master#egg=vault-client&subdirectory=src',
     ]
 )
