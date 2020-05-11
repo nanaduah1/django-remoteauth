@@ -9,7 +9,7 @@ SECRET_KEY = 'y=fy3^y0f02%t$xmuhu&k%*)0s4y4-!vkt_jm)bo_lkzvz+ut1'
 ENVIRONMENT = os.environ.get('ENVIRONMENT','prod')
 
 VAULT_ACCESS_TOKEN = os.environ.get('VAULT_ACCESS_TOKEN','development_vault_token')
-VAULT_API_ENDPOINT = os.environ.get('VAULT_API_ENDPOINT','http://apinginx/api')
+VAULT_API_ENDPOINT = os.environ.get('VAULT_API_ENDPOINT','http://apinginx')
 CONFIG_PROVIDER = VaultClient(vault_access_token=VAULT_ACCESS_TOKEN,
                               vault_api_endpint=VAULT_API_ENDPOINT,
                               default_group='TEST',
