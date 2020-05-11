@@ -16,7 +16,7 @@ CONFIG_PROVIDER = settings.CONFIG_PROVIDER
 #Dynamicaly can change at runtime
 API_CLIENT_ID = CONFIG_PROVIDER.get('API_CLIENT_ID', getattr(settings, 'API_CLIENT_ID',''))
 API_CLIENT_SECRET =CONFIG_PROVIDER.get('API_CLIENT_SECRET', getattr(settings, 'API_CLIENT_SECRET',''))
-BASE_URL = CONFIG_PROVIDER.get('API_ENDPOINT', getattr(settings, 'API_ENDPOINT',''))
+BASE_URL = CONFIG_PROVIDER.get('API_ENDPOINT', getattr(settings, 'API_ENDPOINT','http://apinginx'))
 
 #Can remain static until restart
 NETWORK_ERROR_CODE = -1
