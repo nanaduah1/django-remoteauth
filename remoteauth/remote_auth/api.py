@@ -210,6 +210,12 @@ def fetch(path, max_retry=3, json=True):
                     logger.error("api.fetch:= Unable to fetch data at {url}. Received http {statuscode}: {reason}".format(url=url,
                                                                                                                 statuscode=response.status_code,
                                                                                                                 reason=response.reason))
+                    try:
+                        errors = response.json() or response.text
+                    except:
+                        errors = None
+                
+                    return ApiResults(error_code=response.status_code,error_message=errors or response.reason)
         except ConnectionError:
             logger.exception("Unable to connect to get to API endpoint {}".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
@@ -239,9 +245,12 @@ def post(path:str,data:dict, files=None, max_retry=3):
                                                                                                                 statuscode=response.status_code,
                                                                                                                 reason=response.reason,
                                                                                                                 data=data))
-
+                try:
+                    errors = response.json()
+                except:
+                    errors = None
                 
-                return ApiResults(error_code=response.status_code,error_message=response.reason)
+                return ApiResults(error_code=response.status_code,error_message=errors or response.reason)
 
         except ConnectionError:
             logger.exception("Unable to connect to post to API endpoint {}".format(url))
@@ -277,7 +286,12 @@ def put(path:str,data:dict, files=None, max_retry=3):
                                                                                                                 data=data))
 
                 
-                return ApiResults(error_code=response.status_code,error_message=response.reason)
+                try:
+                    errors = response.json()
+                except:
+                    errors = None
+                
+                return ApiResults(error_code=response.status_code,error_message=errors or response.reason)
         except ConnectionError:
             logger.exception("Unable to put to API endpoint {}".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
@@ -307,7 +321,12 @@ def delete(path, max_retry=3):
                     logger.error("api.delete:= Unable to delete data at {url}. Received http {statuscode}: {reason}".format(url=url,
                                                                                                                 statuscode=response.status_code,
                                                                                                                 reason=response.reason))
-
+                    try:
+                        errors = response.json()
+                    except:
+                        errors = None
+                
+                return ApiResults(error_code=response.status_code,error_message=errors or response.reason)
         except ConnectionError:
             logger.exception("Unable to send delete to API endpoint {}".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
