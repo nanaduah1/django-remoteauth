@@ -1,5 +1,12 @@
 image: python:3.6.5
 
+include:
+  - template: SAST.gitlab-ci.yml
+
+variables:
+  SAST_GOSEC_LEVEL: 2
+
+
 stages:
   - test
 
