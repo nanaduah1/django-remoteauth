@@ -11,14 +11,21 @@ from django.contrib.auth.backends import ModelBackend
 
 logger = logging.getLogger(__name__)
 
+CONFIG_PROVIDER = settings.CONFIG_PROVIDER
+
+#Dynamicaly can change at runtime
+API_CLIENT_ID = CONFIG_PROVIDER.get('API_CLIENT_ID', getattr(settings, 'API_CLIENT_ID',''))
+API_CLIENT_SECRET =CONFIG_PROVIDER.get('API_CLIENT_SECRET', getattr(settings, 'API_CLIENT_SECRET',''))
+BASE_URL = CONFIG_PROVIDER.get('API_ENDPOINT', getattr(settings, 'API_ENDPOINT','http://apinginx'))
+
+#Can remain static until restart
 NETWORK_ERROR_CODE = -1
-API_CLIENT_ID = getattr(settings, 'FOOD_JOINT_API_CLIENTID', '')
-API_CLIENT_SECRET = getattr(settings, 'FOOD_JOINT_API_CLIENT_SECRET', '')
-BASE_URL = getattr(settings,'FOOD_JOINT_API_ENDPOINT','')
-AUTH=HTTPBasicAuth(API_CLIENT_ID, API_CLIENT_SECRET)
+ACCESS_TOKEN_ENDPOINT = getattr(settings, 'ACCESS_TOKEN_ENDPOINT', '/oauth/token/')
+USER_PROFILE_ENDPOINT = getattr(settings, 'USER_PROFILE_ENDPOINT', '/users/profile/')
 USER_ACCESS_TOKEN_KEY="user_token"
 SITE_ACCESS_TOKEN_KEY="site_token"
 ISO_DATE_FORMAT = "'%Y-%m-%dT%H:%M:%S'"
+RELATIVE_URL_PREFIX = getattr(settings, 'RELATIVE_URL_PREFIX', '/api')
 
 _requests={}
 class GlobalRequestMiddleware(object):
@@ -73,10 +80,10 @@ class ApiAccessToken:
     def __get_site_access_token(self, session={}):
         token = session.get(SITE_ACCESS_TOKEN_KEY,None)
         if token is None or self.__is_expired(token):
-            url = __full_url__('/oauth/token/')
+            url = __full_url__(ACCESS_TOKEN_ENDPOINT)
             data = {'grant_type':'client_credentials'}
             try:
-                response = requests.post(url=url, data=data, auth=AUTH)
+                response = requests.post(url=url, data=data, auth=HTTPBasicAuth(CONFIG_PROVIDER.get('API_CLIENT_ID', API_CLIENT_ID) , CONFIG_PROVIDER.get('API_CLIENT_SECRET', API_CLIENT_SECRET)))
                 if response.ok:
                     token = response.json()
                     token.update({"timestamp":datetime.datetime.now().strftime(ISO_DATE_FORMAT)})
@@ -89,23 +96,25 @@ class ApiAccessToken:
                 logger.exception("Connecting to API token endpoint has timed out")
         return token
 
+
     def __is_expired(self, token:dict):
         token_grabbed_at = datetime.datetime.strptime(token["timestamp"],ISO_DATE_FORMAT)
         now=datetime.datetime.now()
         diff = now - token_grabbed_at
         return diff >= datetime.timedelta(seconds=token["expires_in"])
 
+
     def __get_access_token_for_user(self, username,password,session={}):
         token = session.get(USER_ACCESS_TOKEN_KEY,None)
         if token is None or self.__is_expired(token):
-            url = __full_url__('/oauth/token/')
+            url = __full_url__(ACCESS_TOKEN_ENDPOINT)
             data={}
             if token is not None:
                 data.update({'refresh_token': token["refresh_token"], 'grant_type':'refresh_token'})
             else:
                 data.update({'username': username, 'password': password, 'grant_type':'password'})
     
-            response = requests.post(url=url, data=data, auth=AUTH)        
+            response = requests.post(url=url, data=data, auth=HTTPBasicAuth(CONFIG_PROVIDER.get('API_CLIENT_ID', API_CLIENT_ID) , CONFIG_PROVIDER.get('API_CLIENT_SECRET', API_CLIENT_SECRET)))        
             if response.ok:
                 token = response.json()
                 token.update({"timestamp":datetime.datetime.now().strftime(ISO_DATE_FORMAT)})
@@ -122,7 +131,7 @@ class RemoteBackend(ModelBackend):
     """
     
     def get_profile(self, token):
-        url = __full_url__("/users/profile/")
+        url = __full_url__(USER_PROFILE_ENDPOINT)
         headers = __get_auth_header__(token.get('access_token',None))
         response = requests.get(url,headers=headers, auth=None)
         if response.ok:
@@ -201,6 +210,12 @@ def fetch(path, max_retry=3, json=True):
                     logger.error("api.fetch:= Unable to fetch data at {url}. Received http {statuscode}: {reason}".format(url=url,
                                                                                                                 statuscode=response.status_code,
                                                                                                                 reason=response.reason))
+                    try:
+                        errors = response.json() or response.text
+                    except:
+                        errors = None
+                
+                    return ApiResults(error_code=response.status_code,error_message=errors or response.reason)
         except ConnectionError:
             logger.exception("Unable to connect to get to API endpoint {}".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
@@ -230,9 +245,12 @@ def post(path:str,data:dict, files=None, max_retry=3):
                                                                                                                 statuscode=response.status_code,
                                                                                                                 reason=response.reason,
                                                                                                                 data=data))
-
+                try:
+                    errors = response.json()
+                except:
+                    errors = None
                 
-                return ApiResults(error_code=response.status_code,error_message=response.reason)
+                return ApiResults(error_code=response.status_code,error_message=errors or response.reason)
 
         except ConnectionError:
             logger.exception("Unable to connect to post to API endpoint {}".format(url))
@@ -268,7 +286,12 @@ def put(path:str,data:dict, files=None, max_retry=3):
                                                                                                                 data=data))
 
                 
-                return ApiResults(error_code=response.status_code,error_message=response.reason)
+                try:
+                    errors = response.json()
+                except:
+                    errors = None
+                
+                return ApiResults(error_code=response.status_code,error_message=errors or response.reason)
         except ConnectionError:
             logger.exception("Unable to put to API endpoint {}".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
@@ -298,7 +321,12 @@ def delete(path, max_retry=3):
                     logger.error("api.delete:= Unable to delete data at {url}. Received http {statuscode}: {reason}".format(url=url,
                                                                                                                 statuscode=response.status_code,
                                                                                                                 reason=response.reason))
-
+                    try:
+                        errors = response.json()
+                    except:
+                        errors = None
+                
+                return ApiResults(error_code=response.status_code,error_message=errors or response.reason)
         except ConnectionError:
             logger.exception("Unable to send delete to API endpoint {}".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
@@ -312,7 +340,7 @@ def delete(path, max_retry=3):
 
 
 def __full_url__(relative_url):
-    return '{0}{1}'.format(BASE_URL,relative_url)
+    return f"{CONFIG_PROVIDER.get('API_ENDPOINT', BASE_URL)}{RELATIVE_URL_PREFIX}{relative_url}"
 
 
 def __get_auth_header__(access_token=None,token_type='Bearer'):

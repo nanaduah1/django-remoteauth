@@ -1,13 +1,13 @@
 import os
 from setuptools import find_packages, setup
 
-README = 'Coming Soon'
+README = 'Connect to any OAuth2 API in python using client credentials and password flows'
 
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-remoteauth',
-    version='0.0.3',
+    version='0.1.0',
     packages=find_packages(exclude='remoteauth'),
     include_package_data=True,
     license='BSD License',
@@ -16,7 +16,8 @@ setup(
     url='gitlab.com',
     author='Nana Duah',
     install_requires=[
-        'django>=2.1,<3',
-        'requests==2.19.1'
+        'django',
+        'requests',
+        'vault-client @ git+https://gitlab.com/gabano2005/vault-client.git@master#egg=vault-client&subdirectory=src',
     ]
 )
