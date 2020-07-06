@@ -9,7 +9,7 @@ from threading import get_ident
 from django.contrib.auth.backends import ModelBackend
 
 
-logger = logging.getLogger(__name__)
+logger = settings.LOGGER or logging.getLogger(__name__)
 
 CONFIG_PROVIDER = settings.CONFIG_PROVIDER
 
@@ -184,6 +184,7 @@ class RemoteBackend(ModelBackend):
         request = get_request()
         return request and user_obj.is_authenticated and perm in request.session.get("user_profile",{}).get('roles',[])
 
+
 class ApiResults:
     def __init__(self,ok=False,data={},error_code=0,error_message=""):
         self.ok=ok
@@ -222,6 +223,9 @@ def fetch(path, max_retry=3, json=True):
         except Timeout:
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
+        except Exception as ex:
+            logger.critical('Unable to connect to API', detail=str(ex))
+            return ApiResults(error_code=NETWORK_ERROR_CODE, error_message='Unable to connect to API')
     else:
         logger.fatal("Unable to obtain access token for fetch request to {0}".format(url))
         return ApiResults(error_code=4000,error_message="Unable to obtain access token")
@@ -258,6 +262,9 @@ def post(path:str,data:dict, files=None, max_retry=3):
         except Timeout:
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
+        except Exception as ex:
+            logger.critical('Unable to connect to API', detail=str(ex))
+            return ApiResults(error_code=NETWORK_ERROR_CODE, error_message='Unable to connect to API')
     else:
         logger.fatal("Unable to obtain access token for post request to {0}".format(url))
         return ApiResults(error_code=4000,error_message="Unable to obtain access token")
@@ -298,6 +305,9 @@ def put(path:str,data:dict, files=None, max_retry=3):
         except Timeout:
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
+        except Exception as ex:
+            logger.critical('Unable to connect to API', detail=str(ex))
+            return ApiResults(error_code=NETWORK_ERROR_CODE,error_message='Unable to connect to API')
     else:
         logger.fatal("Unable to obtain access token for put request to {0}".format(url))
         return ApiResults(error_code=4000,error_message="Unable to obtain access token")
@@ -333,7 +343,9 @@ def delete(path, max_retry=3):
         except Timeout:
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE,error_message="Unable to connect to remode endpoint")
-
+        except Exception as ex:
+            logger.critical('Unable to connect to API', detail=str(ex))
+            return ApiResults(error_code=NETWORK_ERROR_CODE,error_message='Unable to connect to API')
     else:
         logger.fatal("Unable to obtain access token for delete request to {0}".format(url))
         return ApiResults(error_code=4000,error_message="Unable to obtain access token")
