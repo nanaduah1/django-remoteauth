@@ -222,15 +222,15 @@ def fetch(path, max_retry=3, json=True):
                     return ApiResults(error_code=response.status_code,data=error)
         except ConnectionError:
             logger.exception("Unable to connect to get to API endpoint {}".format(url))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'NETWORK_ERROR'})
         except Timeout:
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'NETWORK_TIMEOUT_ERROR'})
         except Exception as ex:
             logger.critical('Unable to connect to API', detail=str(ex))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'GENERAL_NETWORK_ERROR'})
     else:
-        logger.fatal("Unable to obtain access token for fetch request to {0}".format(url))
+        logger.critical("Unable to obtain access token for fetch request to {0}".format(url))
         return ApiResults(error_code=4000 ,data={'message':"Unable to obtain access token", 'error_code': 'OBTAIN_ACCESS_TOKEN'})
 
               
@@ -266,15 +266,15 @@ def post(path:str,data:dict, files=None, max_retry=3):
 
         except ConnectionError:
             logger.exception("Unable to connect to get to API endpoint {}".format(url))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'NETWORK_ERROR'})
         except Timeout:
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'NETWORK_TIMEOUT_ERROR'})
         except Exception as ex:
             logger.critical('Unable to connect to API', detail=str(ex))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'GENERAL_NETWORK_ERROR'})
     else:
-        logger.fatal("Unable to obtain access token for fetch request to {0}".format(url))
+        logger.critical("Unable to obtain access token for fetch request to {0}".format(url))
         return ApiResults(error_code=4000 ,data={'message':"Unable to obtain access token", 'error_code': 'OBTAIN_ACCESS_TOKEN'})
 
 def put(path:str,data:dict, files=None, max_retry=3):
@@ -314,15 +314,15 @@ def put(path:str,data:dict, files=None, max_retry=3):
 
         except ConnectionError:
             logger.exception("Unable to connect to get to API endpoint {}".format(url))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'NETWORK_ERROR'})
         except Timeout:
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'NETWORK_TIMEOUT_ERROR'})
         except Exception as ex:
             logger.critical('Unable to connect to API', detail=str(ex))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'GENERAL_NETWORK_ERROR'})
     else:
-        logger.fatal("Unable to obtain access token for fetch request to {0}".format(url))
+        logger.critical("Unable to obtain access token for fetch request to {0}".format(url))
         return ApiResults(error_code=4000 ,data={'message':"Unable to obtain access token", 'error_code': 'OBTAIN_ACCESS_TOKEN'})
         
 
@@ -354,18 +354,18 @@ def delete(path, max_retry=3):
                         }
                 
                 return ApiResults(error_code=response.status_code,data=error)
-                
+
         except ConnectionError:
             logger.exception("Unable to connect to get to API endpoint {}".format(url))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'NETWORK_ERROR'})
         except Timeout:
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'NETWORK_TIMEOUT_ERROR'})
         except Exception as ex:
             logger.critical('Unable to connect to API', detail=str(ex))
-            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remode endpoint", 'error_code': 'NETWORK_ERROR'})
+            return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'GENERAL_NETWORK_ERROR'})
     else:
-        logger.fatal("Unable to obtain access token for fetch request to {0}".format(url))
+        logger.critical("Unable to obtain access token for fetch request to {0}".format(url))
         return ApiResults(error_code=4000 ,data={'message':"Unable to obtain access token", 'error_code': 'OBTAIN_ACCESS_TOKEN'})
 
 
