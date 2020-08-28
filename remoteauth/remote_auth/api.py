@@ -271,6 +271,7 @@ def post(path:str,data:dict, files=None, max_retry=3):
             logger.exception("Connecting to API endpoint {} has timed out".format(url))
             return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'NETWORK_TIMEOUT_ERROR'})
         except Exception as ex:
+            print(f'EXCEPTION: {ex}')
             logger.critical('Unable to connect to API', detail=str(ex))
             return ApiResults(error_code=NETWORK_ERROR_CODE, data={'message':"Unable to connect to remote endpoint", 'error_code': 'GENERAL_NETWORK_ERROR'})
     else:
