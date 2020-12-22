@@ -63,7 +63,7 @@ def get_request_session():
 
 class ApiAccessToken:
     def __log_http_failure(self, url,response,context=None):
-        logger.error("{context}:= Unable to acquire access token at {url}. Received http {statuscode}: {reason}".format(url=url,
+        logger.warn("{context}:= Unable to acquire access token at {url}. Received http {statuscode}: {reason}".format(url=url,
                                                                                                             context=context,
                                                                                                             statuscode=response.status_code,
                                                                                                             reason=response.reason))
@@ -136,10 +136,10 @@ class RemoteBackend(ModelBackend):
         response = requests.get(url,headers=headers, auth=None)
         if response.ok:
             return response.json()
-        logger.critical("GET PROFILE FAILED: {0}".format(response.json()))
+        logger.warn("GET PROFILE FAILED: {0}".format(response.text)
 
     def authenticate(self, request, username=None, password=None):
-        logger.critical("AUTHENTICATING as {un}:{pwd}".format(un=username,pwd="*****"))
+        logger.info("AUTHENTICATING as {un}:{pwd}".format(un=username,pwd="*****"))
         token =ApiAccessToken().get_access_token(username=username,password=password,session={})
         user = None
         if token:
@@ -164,9 +164,9 @@ class RemoteBackend(ModelBackend):
 
                     return user
             else:
-                logger.critical("UNABLE to Get Profile")
+                logger.warn("UNABLE to Get Profile")
         else:
-            logger.critical("UNABLE to log in")
+            logger.warn("UNABLE to log in")
 
         #if we ever reach here then return none
         return None
@@ -207,7 +207,7 @@ def fetch(path, max_retry=3, json=True):
                     ApiAccessToken().get_access_token(session=get_request_session())
                     return fetch(path, max_retry=max_retry-1)
                 else:
-                    logger.error("api.fetch:= Unable to fetch data at {url}. Received http {statuscode}: {reason}".format(url=url,
+                    logger.warn("api.fetch:= Unable to fetch data at {url}. Received http {statuscode}: {reason}".format(url=url,
                                                                                                                 statuscode=response.status_code,
                                                                                                                 reason=response.reason))
                     try:
@@ -281,14 +281,12 @@ def post(path:str,data:dict, files=None, max_retry=3):
 def put(path:str,data:dict, files=None, max_retry=3):
     url = __full_url__(path)
     token = ApiAccessToken().get_access_token(session=get_request_session())
-    logger.critical("RESPONSE OK {}".format(token))
     if token:
         headers = __get_auth_header__(token.get('access_token',None))
         try:
             response = requests.put(url,json=data,headers=headers, files=files, auth=None)
         
             if response.ok:
-                logger.critical("RESPONSE OK {}".format(response.json()))
                 return ApiResults(ok=response.ok,data=response.json())
             else:
                 #in case http 401 we should refresh access token
