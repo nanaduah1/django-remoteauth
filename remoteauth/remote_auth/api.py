@@ -369,6 +369,10 @@ def delete(path, max_retry=3):
         logger.critical("Unable to obtain access token for fetch request to {0}".format(url))
         return ApiResults(error_code=4000 ,data={'message':"Unable to obtain access token", 'error_code': 'OBTAIN_ACCESS_TOKEN'})
 
+def graphiQl(path:str, query:str):
+    return post(path=path, data=dict(
+        query=query
+    ))
 
 def __full_url__(relative_url):
     return f"{CONFIG_PROVIDER.get('API_ENDPOINT', BASE_URL)}{RELATIVE_URL_PREFIX}{relative_url}"
