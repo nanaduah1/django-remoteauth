@@ -136,7 +136,7 @@ class RemoteBackend(ModelBackend):
         response = requests.get(url,headers=headers, auth=None)
         if response.ok:
             return response.json()
-        logger.warn("GET PROFILE FAILED: {0}".format(response.text)
+        logger.warn("GET PROFILE FAILED: {0}".format(response.text))
 
     def authenticate(self, request, username=None, password=None):
         logger.info("AUTHENTICATING as {un}:{pwd}".format(un=username,pwd="*****"))
