@@ -9,7 +9,7 @@ from threading import get_ident
 from django.contrib.auth.backends import ModelBackend
 
 
-logger = settings.LOGGER or logging.getLogger(__name__)
+logger = getattr(settings,'LOGGER',logging.getLogger(__name__))
 
 CONFIG_PROVIDER = settings.CONFIG_PROVIDER
 
