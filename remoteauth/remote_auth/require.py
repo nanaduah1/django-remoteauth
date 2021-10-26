@@ -1,5 +1,5 @@
 from . import api
-def in_any_of_the_roles(roles:[]):
+def in_any_of_the_roles(roles:list):
     def user_test(user):
         request = api.get_request()
         user_profile = request.session.get('user_profile')
