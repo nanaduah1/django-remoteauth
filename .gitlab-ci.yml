@@ -9,6 +9,7 @@ variables:
 
 stages:
   - test
+  - release
 
 Run Tests:
   stage: test
@@ -19,3 +20,8 @@ Run Tests:
     - cd remoteauth
     - pip install -r ../requirements.txt
     - python manage.py test remote_auth
+
+Release:
+  stage: release
+  script:
+    - git tag -a v0.1.${CI_JOB_ID} -m "New version release"
