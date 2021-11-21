@@ -30,5 +30,5 @@ def apify(request, *args, **kwargs):
     if api_result.ok:
         return JsonResponse(data=api_result.data)
     else:
-        return JsonResponse(status=400, data=dict(error=api_result.error_message))
+        return JsonResponse(status=400, data=dict(error=api_result.error_code, **api_result.data))
      
