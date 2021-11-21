@@ -1,7 +1,7 @@
 from django.http.response import HttpResponse, JsonResponse
 
 from remote_auth import api
-from remoteauth.remote_auth.api import ApiResults 
+from remote_auth.api import ApiResults
 
 API_HANDLER_MAP = dict(
     get=api.fetch,
