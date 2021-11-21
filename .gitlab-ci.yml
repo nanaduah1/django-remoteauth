@@ -23,5 +23,4 @@ Run Tests:
 
 Release:
   stage: release
-  script:
-    - git tag -a v0.1.${CI_JOB_ID} -m "New version release"
+  tag_name: v0.1.${CI_JOB_ID}
