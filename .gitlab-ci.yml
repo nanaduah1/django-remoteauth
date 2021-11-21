@@ -24,3 +24,5 @@ Run Tests:
 Release:
   stage: release
   tag_name: v0.1.${CI_JOB_ID}
+  script:
+    - echo "Releasing v0.1.${CI_JOB_ID}"
