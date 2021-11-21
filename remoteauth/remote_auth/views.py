@@ -20,6 +20,11 @@ def apify(request, path, *args, **kwargs):
     query_string = request.META.get('QUERY_STRING','')
     files = request.FILES
     data = request.POST or request.GET
+    
+    print(f'qs: {query_string}')
+    print(f'BODY: {data}')
+    print(f'FILES: {files}')
+    
     api_result:ApiResults = api_forwarding_func(
         path=f'/{path}/?{query_string}',
         data=data,
