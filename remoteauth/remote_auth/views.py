@@ -1,3 +1,4 @@
+import json
 from django.http.response import HttpResponse, JsonResponse
 
 from remote_auth import api
@@ -20,11 +21,13 @@ def apify(request, path, *args, **kwargs):
     query_string = request.META.get('QUERY_STRING','')
     files = request.FILES
     data = request.POST or request.GET
-    
+    if not data and request.body:
+        data = json.loads(request.body)
+        
     print(f'qs: {query_string}')
     print(f'BODY: {data}')
     print(f'FILES: {files}')
-    
+
     api_result:ApiResults = api_forwarding_func(
         path=f'/{path}/?{query_string}',
         data=data,
