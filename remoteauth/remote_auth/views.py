@@ -11,18 +11,17 @@ API_HANDLER_MAP = dict(
 )
 
 
-def apify(request, *args, **kwargs):
+def apify(request, path, *args, **kwargs):
     request_method:str = request.method or ''
     api_forwarding_func = API_HANDLER_MAP.get(request_method.lower())
     if not api_forwarding_func:
         return HttpResponse(status=405)
 
-    url=request.path
     query_string = request.META.get('QUERY_STRING','')
     files = request.FILES
     data = request.POST or request.GET
     api_result:ApiResults = api_forwarding_func(
-        path=f'{url}?{query_string}',
+        path=f'/{path}?{query_string}',
         data=data,
         files=files
     )
