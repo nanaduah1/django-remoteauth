@@ -12,8 +12,8 @@ API_HANDLER_MAP = dict(
 
 
 def apify(request, *args, **kwargs):
-    request_method:str = request.method
-    api_forwarding_func = API_HANDLER_MAP.get(request_method)
+    request_method:str = request.method or ''
+    api_forwarding_func = API_HANDLER_MAP.get(request_method.lower())
     if not api_forwarding_func:
         return HttpResponse(status=405)
 
