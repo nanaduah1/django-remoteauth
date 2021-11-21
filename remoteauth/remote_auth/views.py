@@ -11,7 +11,7 @@ API_HANDLER_MAP = dict(
 )
 
 
-def apify(request):
+def apify(request, *args, **kwargs):
     request_method:str = request.method
     api_forwarding_func = API_HANDLER_MAP.get(request_method)
     if not api_forwarding_func:
