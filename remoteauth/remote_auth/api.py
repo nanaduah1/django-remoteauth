@@ -11,8 +11,6 @@ from django.contrib.auth.backends import ModelBackend
 
 logger = getattr(settings,'LOGGER',logging.getLogger(__name__))
 
-CONFIG_PROVIDER = settings.CONFIG_PROVIDER
-
 API_CLIENT_ID = settings.API_CLIENT_ID
 API_CLIENT_SECRET = settings.API_CLIENT_SECRET
 BASE_URL = settings.API_ENDPOINT
@@ -82,7 +80,7 @@ class ApiAccessToken:
             url = __full_url__(ACCESS_TOKEN_ENDPOINT)
             data = {'grant_type':'client_credentials'}
             try:
-                response = requests.post(url=url, data=data, auth=HTTPBasicAuth(CONFIG_PROVIDER.get('API_CLIENT_ID', API_CLIENT_ID) , CONFIG_PROVIDER.get('API_CLIENT_SECRET', API_CLIENT_SECRET)))
+                response = requests.post(url=url, data=data, auth=HTTPBasicAuth(API_CLIENT_ID,API_CLIENT_SECRET))
                 if response.ok:
                     token = response.json()
                     token.update({"timestamp":datetime.datetime.now().strftime(ISO_DATE_FORMAT)})
@@ -113,7 +111,7 @@ class ApiAccessToken:
             else:
                 data.update({'username': username, 'password': password, 'grant_type':'password'})
     
-            response = requests.post(url=url, data=data, auth=HTTPBasicAuth(CONFIG_PROVIDER.get('API_CLIENT_ID', API_CLIENT_ID) , CONFIG_PROVIDER.get('API_CLIENT_SECRET', API_CLIENT_SECRET)))        
+            response = requests.post(url=url, data=data, auth=HTTPBasicAuth(API_CLIENT_ID , API_CLIENT_SECRET))
             if response.ok:
                 token = response.json()
                 token.update({"timestamp":datetime.datetime.now().strftime(ISO_DATE_FORMAT)})
@@ -372,7 +370,7 @@ def graphiQl(path:str, query:str):
     ))
 
 def __full_url__(relative_url):
-    return f"{CONFIG_PROVIDER.get('API_ENDPOINT', BASE_URL)}{RELATIVE_URL_PREFIX}{relative_url}"
+    return f"{BASE_URL}{RELATIVE_URL_PREFIX}{relative_url}"
 
 
 def __get_auth_header__(access_token=None,token_type='Bearer'):
