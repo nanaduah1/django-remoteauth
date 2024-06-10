@@ -11,6 +11,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+API_CLIENT_ID = "uqteuqyteyuq"
+API_CLIENT_SECRET = "iuqydiuqyidu"
+API_ENDPOINT = "http://localhost:2011"
+
 
 # Application definition
 
